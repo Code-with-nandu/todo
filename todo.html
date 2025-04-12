@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A beautiful, responsive To-Do App to organize your tasks efficiently with date management.">
+    <meta name="keywords" content="todo app, task manager, productivity tool, organizer">
+    <meta name="author" content="Your Name">
+    <title>TaskMaster Pro - Smart To-Do App with Date Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#10B981',
+                        dark: '#1F2937',
+                        light: '#F9FAFB',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Animation for task items */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .task-item {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Custom checkbox */
+        .custom-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #D1D5DB;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .custom-checkbox:checked {
+            background-color: #4F46E5;
+            border-color: #4F46E5;
+        }
+        
+        .custom-checkbox:checked::after {
+            content: '\2713';
+            position: absolute;
+            color: white;
+            font-size: 12px;
+            left: 4px;
+            top: 1px;
+        }
+    </style>
+    <!-- Google AdSense Script (Replace with your own publisher ID) -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUBLISHER_ID" crossorigin="anonymous"></script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <header class="bg-primary text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold">TaskMaster Pro</h1>
+                    <p class="text-sm opacity-80">Organize your life, one task at a time</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="theme-toggle" class="p-2 rounded-full hover:bg-white hover:bg-opacity-10 transition">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button id="stats-btn" class="p-2 rounded-full hover:bg-white hover:bg-opacity-10 transition">
+                        <i class="fas fa-chart-bar"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Ad Banner (Top) -->
+    <div class="container mx-auto px-4 py-2">
+        <div class="bg-white p-4 rounded-lg shadow text-center">
+            <!-- AdSense Ad Unit -->
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+                 data-ad-slot="YOUR_AD_SLOT_ID"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>
+                 (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+        </div>
+    </div>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+                    <div class="p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                            <h2 class="text-xl font-semibold text-dark">Add New Task</h2>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-500">Filter:</span>
+                                <select id="filter-tasks" class="border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                                    <option value="all">All Tasks</option>
+                                    <option value="today">Today</option>
+                                    <option value="week">This Week</option>
+                                    <option value="month">This Month</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="pending">Pending</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <form id="task-form" class="space-y-4">
+                            <div>
+                                <label for="task-title" class="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
+                                <input type="text" id="task-title" placeholder="What needs to be done?" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="task-date" class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                                    <input type="date" id="task-date" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                </div>
+                                <div>
+                                    <label for="task-priority" class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                                    <select id="task-priority" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                        <option value="low">Low</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="task-description" class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                                <textarea id="task-description" rows="2" placeholder="Add more details about your task..." class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+                            </div>
+                            
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-6 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                                    Add Task <i class="fas fa-plus ml-1"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-semibold text-dark">Your Tasks</h2>
+                            <div class="text-sm text-gray-500">
+                                <span id="task-count">0</span> tasks
+                            </div>
+                        </div>
+                        
+                        <div id="task-list" class="space-y-3">
+                            <!-- Tasks will be dynamically added here -->
+                            <div class="text-center py-8 text-gray-500" id="empty-state">
+                                <i class="fas fa-tasks text-4xl mb-3 opacity-30"></i>
+                                <p class="text-lg">No tasks added yet</p>
+                                <p class="text-sm mt-1">Add your first task using the form above</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lg:col-span-1 space-y-8">
+                <!-- Sidebar Ad -->
+                <div class="bg-white p-4 rounded-lg shadow text-center">
+                    <!-- AdSense Ad Unit -->
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+                         data-ad-slot="YOUR_AD_SLOT_ID"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+                </div>
+                
+                <!-- Calendar Widget -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <h2 class="text-xl font-semibold text-dark mb-4">Task Calendar</h2>
+                        <div class="mb-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <button id="prev-month" class="p-1 rounded-full hover:bg-gray-100 transition">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <h3 id="current-month" class="font-medium">Month Year</h3>
+                                <button id="next-month" class="p-1 rounded-full hover:bg-gray-100 transition">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            <div id="mini-calendar" class="grid grid-cols-7 gap-1 text-center">
+                                <!-- Calendar will be generated here -->
+                            </div>
+                        </div>
+                        <div class="border-t pt-4">
+                            <h3 class="font-medium mb-2">Upcoming Tasks</h3>
+                            <div id="upcoming-tasks" class="space-y-2">
+                                <!-- Upcoming tasks will be shown here -->
+                                <p class="text-sm text-gray-500">No upcoming tasks</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stats Widget -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <h2 class="text-xl font-semibold text-dark mb-4">Productivity Stats</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Completed Tasks</span>
+                                    <span id="completed-count">0</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div id="completed-bar" class="bg-secondary h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Pending Tasks</span>
+                                    <span id="pending-count">0</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div id="pending-bar" class="bg-yellow-500 h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Overdue Tasks</span>
+                                    <span id="overdue-count">0</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div id="overdue-bar" class="bg-red-500 h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Ad Banner -->
+    <div class="container mx-auto px-4 py-4">
+        <div class="bg-white p-4 rounded-lg shadow text-center">
+            <!-- AdSense Ad Unit -->
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+                 data-ad-slot="YOUR_AD_SLOT_ID"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>
+                 (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white py-6">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-lg font-semibold">TaskMaster Pro</h3>
+                    <p class="text-sm opacity-80">Your ultimate productivity companion</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="hover:text-primary transition">Privacy Policy</a>
+                    <a href="#" class="hover:text-primary transition">Terms of Service</a>
+                    <a href="#" class="hover:text-primary transition">Contact Us</a>
+                </div>
+            </div>
+            <div class="mt-6 text-center text-sm opacity-70">
+                &copy; <span id="current-year"></span> TaskMaster Pro. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Task Detail Modal -->
+    <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 id="modal-task-title" class="text-xl font-semibold"></h3>
+                    <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <p id="modal-task-description" class="text-gray-700"></p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-500">Due Date</p>
+                            <p id="modal-task-date" class="font-medium"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Priority</p>
+                            <p id="modal-task-priority" class="font-medium capitalize"></p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-500">Status</p>
+                            <p id="modal-task-status" class="font-medium"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Created</p>
+                            <p id="modal-task-created" class="font-medium"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button id="delete-task" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition">
+                        Delete <i class="fas fa-trash ml-1"></i>
+                    </button>
+                    <button id="edit-task" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition">
+                        Edit <i class="fas fa-edit ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const taskForm = document.getElementById('task-form');
+        const taskTitle = document.getElementById('task-title');
+        const taskDate = document.getElementById('task-date');
+        const taskPriority = document.getElementById('task-priority');
+        const taskDescription = document.getElementById('task-description');
+        const taskList = document.getElementById('task-list');
+        const emptyState = document.getElementById('empty-state');
+        const taskCount = document.getElementById('task-count');
+        const filterTasks = document.getElementById('filter-tasks');
+        const themeToggle = document.getElementById('theme-toggle');
+        const statsBtn = document.getElementById('stats-btn');
+        const currentMonth = document.getElementById('current-month');
+        const miniCalendar = document.getElementById('mini-calendar');
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const upcomingTasks = document.getElementById('upcoming-tasks');
+        const completedCount = document.getElementById('completed-count');
+        const pendingCount = document.getElementById('pending-count');
+        const overdueCount = document.getElementById('overdue-count');
+        const completedBar = document.getElementById('completed-bar');
+        const pendingBar = document.getElementById('pending-bar');
+        const overdueBar = document.getElementById('overdue-bar');
+        const taskModal = document.getElementById('task-modal');
+        const closeModal = document.getElementById('close-modal');
+        const modalTaskTitle = document.getElementById('modal-task-title');
+        const modalTaskDescription = document.getElementById('modal-task-description');
+        const modalTaskDate = document.getElementById('modal-task-date');
+        const modalTaskPriority = document.getElementById('modal-task-priority');
+        const modalTaskStatus = document.getElementById('modal-task-status');
+        const modalTaskCreated = document.getElementById('modal-task-created');
+        const deleteTaskBtn = document.getElementById('delete-task');
+        const editTaskBtn = document.getElementById('edit-task');
+        const currentYear = document.getElementById('current-year');
+
+        // State
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let currentDate = new Date();
+        let selectedDate = null;
+        let currentModalTaskId = null;
+        let darkMode = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set current year in footer
+            currentYear.textContent = new Date().getFullYear();
+            
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            taskDate.value = today;
+            
+            // Load tasks
+            renderTasks();
+            updateTaskCount();
+            updateStats();
+            
+            // Initialize calendar
+            renderMiniCalendar();
+            
+            // Set up event listeners
+            setupEventListeners();
+        });
+
+        // Event Listeners
+        function setupEventListeners() {
+            // Form submission
+            taskForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                addTask();
+            });
+            
+            // Filter tasks
+            filterTasks.addEventListener('change', () => {
+                renderTasks();
+            });
+            
+            // Theme toggle
+            themeToggle.addEventListener('click', toggleTheme);
+            
+            // Calendar navigation
+            prevMonthBtn.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderMiniCalendar();
+            });
+            
+            nextMonthBtn.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderMiniCalendar();
+            });
+            
+            // Stats button
+            statsBtn.addEventListener('click', () => {
+                // Scroll to stats section
+                document.querySelector('.lg\\:col-span-1').scrollIntoView({ behavior: 'smooth' });
+            });
+            
+            // Modal controls
+            closeModal.addEventListener('click', () => {
+                taskModal.classList.add('hidden');
+            });
+            
+            deleteTaskBtn.addEventListener('click', deleteCurrentTask);
+            editTaskBtn.addEventListener('click', editCurrentTask);
+        }
+
+        // Task Functions
+        function addTask() {
+            if (!taskTitle.value.trim()) {
+                alert('Please enter a task title');
+                return;
+            }
+            
+            const newTask = {
+                id: Date.now().toString(),
+                title: taskTitle.value.trim(),
+                description: taskDescription.value.trim(),
+                date: taskDate.value,
+                priority: taskPriority.value,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+            
+            tasks.push(newTask);
+            saveTasks();
+            renderTasks();
+            updateTaskCount();
+            updateStats();
+            renderMiniCalendar();
+            
+            // Reset form
+            taskForm.reset();
+            taskDate.value = new Date().toISOString().split('T')[0];
+            taskPriority.value = 'medium';
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(task => task.id !== id);
+            saveTasks();
+            renderTasks();
+            updateTaskCount();
+            updateStats();
+            renderMiniCalendar();
+            
+            // Close modal if open
+            taskModal.classList.add('hidden');
+        }
+
+        function toggleTaskCompletion(id) {
+            tasks = tasks.map(task => {
+                if (task.id === id) {
+                    return { ...task, completed: !task.completed };
+                }
+                return task;
+            });
+            
+            saveTasks();
+            renderTasks();
+            updateTaskCount();
+            updateStats();
+            renderMiniCalendar();
+        }
+
+        function editTask(id) {
+            const taskToEdit = tasks.find(task => task.id === id);
+            if (!taskToEdit) return;
+            
+            // Populate form with task data
+            taskTitle.value = taskToEdit.title;
+            taskDescription.value = taskToEdit.description;
+            taskDate.value = taskToEdit.date;
+            taskPriority.value = taskToEdit.priority;
+            
+            // Remove the task being edited
+            tasks = tasks.filter(task => task.id !== id);
+            saveTasks();
+            
+            // Close modal
+            taskModal.classList.add('hidden');
+            
+            // Scroll to form
+            taskTitle.focus();
+        }
+
+        function deleteCurrentTask() {
+            if (currentModalTaskId) {
+                deleteTask(currentModalTaskId);
+            }
+        }
+
+        function editCurrentTask() {
+            if (currentModalTaskId) {
+                editTask(currentModalTaskId);
+            }
+        }
+
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Rendering Functions
+        function renderTasks() {
+            const filterValue = filterTasks.value;
+            let filteredTasks = [...tasks];
+            
+            // Apply filters
+            switch (filterValue) {
+                case 'today':
+                    const today = new Date().toISOString().split('T')[0];
+                    filteredTasks = filteredTasks.filter(task => task.date === today);
+                    break;
+                case 'week':
+                    const startOfWeek = getStartOfWeek(new Date());
+                    const endOfWeek = getEndOfWeek(new Date());
+                    filteredTasks = filteredTasks.filter(task => {
+                        const taskDate = new Date(task.date);
+                        return taskDate >= startOfWeek && taskDate <= endOfWeek;
+                    });
+                    break;
+                case 'month':
+                    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+                    filteredTasks = filteredTasks.filter(task => {
+                        const taskDate = new Date(task.date);
+                        return taskDate >= startOfMonth && taskDate <= endOfMonth;
+                    });
+                    break;
+                case 'completed':
+                    filteredTasks = filteredTasks.filter(task => task.completed);
+                    break;
+                case 'pending':
+                    filteredTasks = filteredTasks.filter(task => !task.completed);
+                    break;
+            }
+            
+            // Sort tasks: overdue first, then by date, then by priority
+            filteredTasks.sort((a, b) => {
+                // Completed tasks go to bottom
+                if (a.completed && !b.completed) return 1;
+                if (!a.completed && b.completed) return -1;
+                if (a.completed && b.completed) return 0;
+                
+                // Overdue tasks come first
+                const today = new Date().toISOString().split('T')[0];
+                const aIsOverdue = a.date < today && !a.completed;
+                const bIsOverdue = b.date < today && !b.completed;
+                
+                if (aIsOverdue && !bIsOverdue) return -1;
+                if (!aIsOverdue && bIsOverdue) return 1;
+                
+                // Then sort by date
+                if (a.date < b.date) return -1;
+                if (a.date > b.date) return 1;
+                
+                // Then sort by priority
+                const priorityOrder = { high: 3, medium: 2, low: 1 };
+                return priorityOrder[b.priority] - priorityOrder[a.priority];
+            });
+            
+            // Clear task list
+            taskList.innerHTML = '';
+            
+            if (filteredTasks.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            
+            // Render each task
+            filteredTasks.forEach(task => {
+                const taskElement = document.createElement('div');
+                taskElement.className = `task-item bg-white p-4 rounded-lg shadow-sm border-l-4 ${
+                    task.completed ? 'border-gray-300 opacity-70' : 
+                    task.priority === 'high' ? 'border-red-500' : 
+                    task.priority === 'medium' ? 'border-yellow-500' : 'border-green-500'
+                }`;
+                
+                const today = new Date().toISOString().split('T')[0];
+                const isOverdue = task.date < today && !task.completed;
+                
+                taskElement.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start space-x-3 flex-1">
+                            <button class="toggle-complete mt-1" data-id="${task.id}">
+                                <input type="checkbox" ${task.completed ? 'checked' : ''} class="custom-checkbox">
+                            </button>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-medium ${task.completed ? 'line-through text-gray-500' : 'text-gray-800'}">${task.title}</h3>
+                                ${task.description ? `<p class="text-sm text-gray-600 mt-1">${task.description}</p>` : ''}
+                                <div class="flex items-center mt-2 space-x-4 text-xs">
+                                    <span class="flex items-center text-gray-500">
+                                        <i class="far fa-calendar-alt mr-1"></i>
+                                        ${formatDate(task.date)}
+                                        ${isOverdue && !task.completed ? '<span class="ml-2 bg-red-100 text-red-800 px-2 py-0.5 rounded-full">Overdue</span>' : ''}
+                                    </span>
+                                    <span class="capitalize ${task.priority === 'high' ? 'text-red-500' : task.priority === 'medium' ? 'text-yellow-500' : 'text-green-500'}">
+                                        ${task.priority} priority
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="view-task text-gray-400 hover:text-primary ml-2" data-id="${task.id}">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    </div>
+                `;
+                
+                taskList.appendChild(taskElement);
+            });
+            
+            // Add event listeners to new elements
+            document.querySelectorAll('.toggle-complete').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const id = button.getAttribute('data-id');
+                    toggleTaskCompletion(id);
+                });
+            });
+            
+            document.querySelectorAll('.view-task').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const id = button.getAttribute('data-id');
+                    showTaskDetails(id);
+                });
+            });
+        }
+
+        function showTaskDetails(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+            
+            currentModalTaskId = id;
+            
+            // Populate modal
+            modalTaskTitle.textContent = task.title;
+            modalTaskDescription.textContent = task.description || 'No description provided';
+            modalTaskDate.textContent = formatDate(task.date, true);
+            modalTaskPriority.textContent = task.priority;
+            modalTaskStatus.textContent = task.completed ? 'Completed' : 'Pending';
+            modalTaskCreated.textContent = formatDate(task.createdAt, true);
+            
+            // Show modal
+            taskModal.classList.remove('hidden');
+        }
+
+        function updateTaskCount() {
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(task => task.completed).length;
+            const pendingTasks = totalTasks - completedTasks;
+            
+            taskCount.textContent = `${pendingTasks} pending, ${completedTasks} completed`;
+        }
+
+        function updateStats() {
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(task => task.completed).length;
+            const pendingTasks = tasks.filter(task => !task.completed).length;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const overdueTasks = tasks.filter(task => !task.completed && task.date < today).length;
+            
+            completedCount.textContent = completedTasks;
+            pendingCount.textContent = pendingTasks;
+            overdueCount.textContent = overdueTasks;
+            
+            // Update progress bars
+            const totalForBars = Math.max(totalTasks, 1); // Avoid division by zero
+            
+            completedBar.style.width = `${(completedTasks / totalForBars) * 100}%`;
+            pendingBar.style.width = `${(pendingTasks / totalForBars) * 100}%`;
+            overdueBar.style.width = `${(overdueTasks / totalForBars) * 100}%`;
+            
+            // Update upcoming tasks
+            const upcoming = tasks
+                .filter(task => !task.completed && task.date >= today)
+                .sort((a, b) => new Date(a.date) - new Date(b.date))
+                .slice(0, 3);
+            
+            upcomingTasks.innerHTML = '';
+            
+            if (upcoming.length === 0) {
+                upcomingTasks.innerHTML = '<p class="text-sm text-gray-500">No upcoming tasks</p>';
+                return;
+            }
+            
+            upcoming.forEach(task => {
+                const taskElement = document.createElement('div');
+                taskElement.className = 'flex items-center justify-between p-2 hover:bg-gray-50 rounded';
+                
+                taskElement.innerHTML = `
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-sm font-medium truncate">${task.title}</h4>
+                        <p class="text-xs text-gray-500">${formatDate(task.date)}</p>
+                    </div>
+                    <span class="text-xs px-2 py-1 rounded-full ${
+                        task.priority === 'high' ? 'bg-red-100 text-red-800' : 
+                        task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                        'bg-green-100 text-green-800'
+                    }">
+                        ${task.priority}
+                    </span>
+                `;
+                
+                upcomingTasks.appendChild(taskElement);
+            });
+        }
+
+        // Calendar Functions
+        function renderMiniCalendar() {
+            // Set month/year header
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            currentMonth.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+            
+            // Get first day of month and total days
+            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+            const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+            
+            // Clear calendar
+            miniCalendar.innerHTML = '';
+            
+            // Add day headers
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayNames.forEach(day => {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'text-xs font-medium text-gray-500';
+                dayElement.textContent = day;
+                miniCalendar.appendChild(dayElement);
+            });
+            
+            // Add empty cells for days before first day of month
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'h-8';
+                miniCalendar.appendChild(emptyCell);
+            }
+            
+            // Add days of month
+            const today = new Date();
+            const currentMonthNum = currentDate.getMonth();
+            const currentYearNum = currentDate.getFullYear();
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('button');
+                dayElement.className = 'h-8 w-8 rounded-full text-sm flex items-center justify-center';
+                
+                // Check if this date has tasks
+                const dateStr = `${currentYearNum}-${String(currentMonthNum + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dateTasks = tasks.filter(task => task.date === dateStr);
+                const hasTasks = dateTasks.length > 0;
+                const hasCompleted = dateTasks.some(task => task.completed);
+                const hasPending = dateTasks.some(task => !task.completed);
+                
+                // Style based on tasks and current date
+                if (day === today.getDate() && currentMonthNum === today.getMonth() && currentYearNum === today.getFullYear()) {
+                    dayElement.classList.add('bg-primary', 'text-white');
+                } else if (hasPending && hasCompleted) {
+                    dayElement.classList.add('bg-gradient-to-br', 'from-primary', 'to-secondary', 'text-white');
+                } else if (hasPending) {
+                    dayElement.classList.add('bg-primary', 'text-white');
+                } else if (hasCompleted) {
+                    dayElement.classList.add('bg-secondary', 'text-white');
+                } else {
+                    dayElement.classList.add('hover:bg-gray-100');
+                }
+                
+                dayElement.textContent = day;
+                dayElement.addEventListener('click', () => {
+                    selectedDate = dateStr;
+                    filterTasks.value = 'all';
+                    renderTasks();
+                });
+                
+                miniCalendar.appendChild(dayElement);
+            }
+        }
+
+        // Utility Functions
+        function formatDate(dateStr, includeTime = false) {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return 'No date';
+            
+            const options = { 
+                weekday: 'short', 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            };
+            
+            let formatted = date.toLocaleDateString('en-US', options);
+            
+            if (includeTime) {
+                const timeOptions = { hour: '2-digit', minute: '2-digit' };
+                formatted += ' at ' + date.toLocaleTimeString('en-US', timeOptions);
+            }
+            
+            return formatted;
+        }
+
+        function getStartOfWeek(date) {
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+            return new Date(date.setDate(diff));
+        }
+
+        function getEndOfWeek(date) {
+            const start = getStartOfWeek(date);
+            const end = new Date(start);
+            end.setDate(start.getDate() + 6);
+            return end;
+        }
+
+        function toggleTheme() {
+            darkMode = !darkMode;
+            document.documentElement.classList.toggle('dark', darkMode);
+            themeToggle.innerHTML = darkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            
+            // Save theme preference
+            localStorage.setItem('darkMode', darkMode);
+        }
+
+        // Check for saved theme preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            darkMode = true;
+            document.documentElement.classList.add('dark');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+    </script>
+</body>
+</html>
